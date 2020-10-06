@@ -56,7 +56,7 @@ steps:
     sudo DEBIAN_FRONTEND=noninteractive apt autoremove --purge >/dev/null
     sudo DEBIAN_FRONTEND=noninteractive apt autoclean >/dev/null
     sudo DEBIAN_FRONTEND=noninteractive apt clean >/dev/null
-    if [ "${DEBUG_PIPE}" == "1" ]; then
+    if [ "${DEBUG_PuIPE}" == "1" ]; then
       # Tools to debug space usage
       sudo DEBIAN_FRONTEND=noninteractive apt -yq install durep wajig >/dev/null
       wajig large
@@ -84,17 +84,7 @@ steps:
   displayName: 'Upgrade and install dependencies'
 
 - bash: |
-    # until sudo DEBIAN_FRONTEND=noninteractive apt install gcc-9 g++-9
-    # do
-    #   echo "Failed updating, trying again..."
-    #   sleep 1
-    # done
-    # sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 90 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
-    echo "GCC is already up to date"
-  displayName: 'Install Newer GCC'
-
-- bash: |
-    if [ "${DEBUG_PIPE}" == "1" ]; then
+    if [ "${DEBUG_PIPELINE}" == "1" ]; then
       echo "Free space before"
       df -h
     fi
@@ -103,14 +93,14 @@ steps:
     sudo DEBIAN_FRONTEND=noninteractive apt clean
     sudo DEBIAN_FRONTEND=noninteractive apt-get clean
     sudo DEBIAN_FRONTEND=noninteractive apt-get autoclean
-    if [ "${DEBUG_PIPE}" == "1" ]; then
+    if [ "${DEBUG_PIPELINE}" == "1" ]; then
       echo "Free space after"
       df -h
     fi
   displayName: 'Clean up leftover dependencies'
 
 - bash: |
-    if [ "${DEBUG_PIPE}" == "1" ]; then
+    if [ "${DEBUG_PIPELINE}" == "1" ]; then
       echo "Debug variables:"
       echo Build.SourceBranch $(Build.SourceBranch)
       echo Build.SourceBranchName $(Build.SourceBranchName)
@@ -142,7 +132,7 @@ steps:
     # sudo chmod 600 /swapfile
     # sudo mkswap /swapfile
     # sudo swapon /swapfile
-    if [ "${DEBUG_PIPE}" == "1" ]; then
+    if [ "${DEBUG_PIPELINE}" == "1" ]; then
       df -h
       du -Sh / 2>/dev/null | sort -rh | head -n 200
       du -akS -d 4  / 2>/dev/null | sort -n -r | head -n 50
@@ -192,7 +182,7 @@ steps:
     bitbake-layers add-layer ../meta-openembedded/meta-networking
     bitbake-layers add-layer $(Build.SourcesDirectory)
 
-    if [ "${DEBUG_PIPE}" == "1" ]; then
+    if [ "${DEBUG_PIPELINE}" == "1" ]; then
       echo "bblayers.conf:"
       cat conf/bblayers.conf
     fi

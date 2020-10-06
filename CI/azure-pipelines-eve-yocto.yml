@@ -24,4 +24,5 @@ jobs:
       buildtype: 'chromebook'
       machine: 'eve'
       kernel: 'yocto'
+      debugit: $(debugit)
 
