@@ -1,0 +1,72 @@
+From cb8bd324adfd4654d1a85a276a31c4cdd304034d Mon Sep 17 00:00:00 2001
+From: Alejandro Hernandez Samaniego <alejandro@enedino.org>
+Date: Thu, 7 Jan 2021 15:11:18 -0700
+Subject: [PATCH] fetcher: Allow multiple equal signs to be passed on a uri
+ parameter
+
+Signed-off-by: Alejandro Enedino Hernandez Samaniego <alejandro@enedino.org>
+---
+ bitbake/lib/bb/fetch2/__init__.py | 12 +++++++++---
+ bitbake/lib/bb/fetch2/wget.py     | 15 ++++++++++++---
+ 2 files changed, 21 insertions(+), 6 deletions(-)
+
+diff --git a/bitbake/lib/bb/fetch2/__init__.py b/bitbake/lib/bb/fetch2/__init__.py
+index ee3d7b1672..5a1f32ee64 100644
+--- a/bitbake/lib/bb/fetch2/__init__.py
++++ b/bitbake/lib/bb/fetch2/__init__.py
+@@ -388,7 +388,9 @@ def decodeurl(url):
+             if s:
+                 if not '=' in s:
+                     raise MalformedUrl(url, "The URL: '%s' is invalid: parameter %s does not specify a value (missing '=')" % (url, s))
+-                s1, s2 = s.split('=')
++                s = s.split('=')
++                s1 = s[0]
++                s2 = '='.join(s[1:])
+                 p[s1] = s2
+ 
+     return type, host, urllib.parse.unquote(path), user, pswd, p
+@@ -416,9 +418,13 @@ def encodeurl(decoded):
+             path = path.replace("//", "/")
+         url += "%s" % urllib.parse.quote(path)
+     if p:
++        extra = ''
+         for parm in p:
+-            url += ";%s=%s" % (parm, p[parm])
+-
++            if parm=='tok':
++                url += "%s" % p[parm]
++            else:
++                extra += ";%s=%s" % (parm, p[parm])
++        url += "%s" % extra
+     return url
+ 
+ def uri_replace(ud, uri_find, uri_replace, replacements, d, mirrortarball=None):
+diff --git a/bitbake/lib/bb/fetch2/wget.py b/bitbake/lib/bb/fetch2/wget.py
+index e952f411c7..b7390adc8c 100644
+--- a/bitbake/lib/bb/fetch2/wget.py
++++ b/bitbake/lib/bb/fetch2/wget.py
+@@ -321,9 +321,18 @@ class Wget(FetchMethod):
+                 add_basic_auth("%s:%s" % (login, password), r)
+             except (TypeError, ImportError, IOError, netrc.NetrcParseError):
+                 pass
+-
+-            with opener.open(r) as response:
+-                pass
++            try:
++                with opener.open(r) as response:
++                    pass
++            except ConnectionResetError as e:
++                if try_again:
++                    # if 'reset' in str(e):
++                    bb.warn("checkstatus: trying again: %s \n %s" % (str(e), str(ud.url)))
++                    return self.checkstatus(fetch, ud, d, False)
++                else:
++                    # debug for now to avoid spamming the logs in e.g. remote sstate searches
++                    logger.debug("checkstatus() urlopen failed: %s" % str(e))
++                    return False
+         except urllib.error.URLError as e:
+             if try_again:
+                 logger.debug(2, "checkstatus: trying again")
+-- 
+2.25.1
+
