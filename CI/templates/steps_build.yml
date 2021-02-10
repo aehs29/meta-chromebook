@@ -18,7 +18,6 @@ steps:
       source oe-init-build-env
       echo "MACHINE = \"${MACHINE}\"" >> ./conf/local.conf
       echo "PREFERRED_PROVIDER_virtual/kernel = \"${KERNEL}\"" >> ./conf/local.conf
-      echo "FETCHCMD_wget = \"/usr/bin/env wget --retry-connrefused --waitretry=10 -t 5 -T 30 --passive-ftp --no-check-certificate\"" >> ./conf/local.conf
       echo "${EXTRA_LOCALCONF}" >> ./conf/local.conf
       echo "Building with the following configuration:"
       tail -n 10 conf/local.conf
