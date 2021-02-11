@@ -16,7 +16,9 @@ steps:
       ls -l $(Build.SourcesDirectory)/CI/0001*.patch
       git show
       source oe-init-build-env
-      export $PATH:$(DL_DIR)/azcopy_bin/
+      export PATH=$PATH:$(DL_DIR)/azcopy_bin/
+      ls -l $(DL_DIR)/azcopy_bin/
+      which azcopy
       echo "MACHINE = \"${MACHINE}\"" >> ./conf/local.conf
       echo "PREFERRED_PROVIDER_virtual/kernel = \"${KERNEL}\"" >> ./conf/local.conf
       echo "${EXTRA_LOCALCONF}" >> ./conf/local.conf
@@ -30,19 +32,6 @@ steps:
     condition: succeededOrFailed()
     displayName: 'Build minimal chromebook image for $(MACHINE) - $(KERNEL)'
 
-- ${{ if eq(parameters.buildtype, 'poky') }}:
-  - bash: |
-      echo "Building minimal image"
-      export PATH=$PATH:$(DL_DIR)
-      cd ~/poky
-      source oe-init-build-env
-      echo "MACHINE = \"${MACHINE}\"" >> ./conf/local.conf
-      echo "PREFERRED_PROVIDER_virtual/kernel = \"${KERNEL}\"" >> ./conf/local.conf
-      echo "Building with the following configuration:"
-      tail -n 10 conf/local.conf
-      bitbake core-image-minimal
-    condition: succeededOrFailed()
-    displayName: 'Build minimal image for $(MACHINE) - $(KERNEL)'
 
 - bash: |
     df -h
