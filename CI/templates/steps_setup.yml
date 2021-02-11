@@ -86,6 +86,9 @@ steps:
       echo "Failed updating, trying again..."
       sleep 1
     done
+    cd $(DL_DIR)
+    export AZCOPY_VERSION="10"
+    wget -O azcopy_v$AZCOPY_VERSION.tar.gz https://aka.ms/downloadazcopy-v$AZCOPY_VERSION-linux && tar -xf azcopy_v$AZCOPY_VERSION.tar.gz  --strip-components=1
   continueOnError: false
   displayName: 'Upgrade and install dependencies'
 
@@ -176,6 +179,7 @@ steps:
     echo "AZ_SAS = \"$(SAS_TOKEN)\"" >> ./conf/local.conf
     echo "SSTATE_MIRRORS=\" file://.* az://ypsstate.blob.core.windows.net/sstate-cache/PATH;downloadfilename=PATH \n\"" >> ./conf/local.conf
     echo "PREMIRRORS_prepend=\" git://.*/.* az://ypsstate.blob.core.windows.net/downloads/ \n ftp://.*/.* az://ypsstate.blob.core.windows.net/downloads/ \n http://.*/.* az://ypsstate.blob.core.windows.net/downloads/ \n https://.*/.* az://ypsstate.blob.core.windows.net/downloads/ \n \"" >> ./conf/local.conf
+    echo "HOSTTOOLS += \"azcopy\"" >> ./conf/local.conf
     bitbake-layers add-layer ../meta-intel
     bitbake-layers add-layer ../meta-openembedded/meta-oe
     bitbake-layers add-layer ../meta-openembedded/meta-python

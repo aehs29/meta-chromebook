@@ -16,6 +16,7 @@ steps:
       ls -l $(Build.SourcesDirectory)/CI/0001*.patch
       git show
       source oe-init-build-env
+      export PATH=$PATH:$(DL_DIR)
       echo "MACHINE = \"${MACHINE}\"" >> ./conf/local.conf
       echo "PREFERRED_PROVIDER_virtual/kernel = \"${KERNEL}\"" >> ./conf/local.conf
       echo "${EXTRA_LOCALCONF}" >> ./conf/local.conf
@@ -32,6 +33,7 @@ steps:
 - ${{ if eq(parameters.buildtype, 'poky') }}:
   - bash: |
       echo "Building minimal image"
+      export PATH=$PATH:$(DL_DIR)
       cd ~/poky
       source oe-init-build-env
       echo "MACHINE = \"${MACHINE}\"" >> ./conf/local.conf
