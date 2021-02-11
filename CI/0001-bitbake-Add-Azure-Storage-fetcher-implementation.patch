@@ -1,4 +1,4 @@
-From b76f2f517d6a7c96b9d04d7ab699edf216a94514 Mon Sep 17 00:00:00 2001
+From dd8c2617d77f473c6dfdb49d330b44a94cc46b86 Mon Sep 17 00:00:00 2001
 From: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
 Date: Thu, 11 Feb 2021 01:21:21 -0700
 Subject: [PATCH] bitbake: Add Azure Storage fetcher implementation
@@ -24,9 +24,9 @@ AZ_SAS="?sv=2000-01-01&ss=...&sig=somesignature"
 Signed-off-by: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
 ---
  bitbake/lib/bb/fetch2/__init__.py |  4 +-
- bitbake/lib/bb/fetch2/az.py       | 82 +++++++++++++++++++++++++++++++
+ bitbake/lib/bb/fetch2/az.py       | 88 +++++++++++++++++++++++++++++++
  meta/classes/sanity.bbclass       |  2 +-
- 3 files changed, 86 insertions(+), 2 deletions(-)
+ 3 files changed, 92 insertions(+), 2 deletions(-)
  create mode 100644 bitbake/lib/bb/fetch2/az.py
 
 diff --git a/bitbake/lib/bb/fetch2/__init__.py b/bitbake/lib/bb/fetch2/__init__.py
@@ -57,10 +57,10 @@ index 19169d780f..cf0201c490 100644
 +methods.append(az.Az())
 diff --git a/bitbake/lib/bb/fetch2/az.py b/bitbake/lib/bb/fetch2/az.py
 new file mode 100644
-index 0000000000..50179e6a99
+index 0000000000..c7f825b790
 --- /dev/null
 +++ b/bitbake/lib/bb/fetch2/az.py
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,88 @@
 +"""
 +BitBake 'Fetch' Azure Storage implementation
 +
@@ -134,11 +134,17 @@ index 0000000000..50179e6a99
 +        Check the status of a URL
 +        """
 +
-+        fetchcmd = '%s list https://%s%s' % (ud.basecmd, ud.host, ud.path)
++        az_sas = d.getVar('AZ_SAS')
++        
++        if az_sas:
++            fetchcmd = '%s list https://%s%s%s' % (ud.basecmd, ud.host, ud.path, az_sas)
++        else:
++            fetchcmd = '%s list https://%s%s' % (ud.basecmd, ud.host, ud.path)
 +        bb.fetch2.check_network_access(d, fetchcmd, ud.url)
 +        output = runfetchcmd(fetchcmd, d)
 +
-+        # azcopy list returns 0 when an object wasn't found, need to check the output instead
++        # azcopy list returns 0 (but no output) when an object wasn't found,
++        # if the authentication method isn't valid it returns 1
 +        if not output:
 +            raise FetchError("The azcopy list command for https://%s%s gave empty output" % (ud.host, ud.path))
 +
