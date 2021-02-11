@@ -90,7 +90,8 @@ steps:
     export AZCOPY_VERSION="10"
     wget -O azcopy_v$AZCOPY_VERSION.tar.gz https://aka.ms/downloadazcopy-v$AZCOPY_VERSION-linux && tar -xf azcopy_v$AZCOPY_VERSION.tar.gz  --strip-components=1
     mkdir azcopy_bin/ && mv azcopy azcopy_bin/
-    export PATH=$(DL_DIR)/azcopy_bin/:$PATH
+    export PATH=$PATH:$(DL_DIR)/azcopy_bin/
+    ls -l $(DL_DIR)/azcopy_bin/ 
     sudo rm -rf /usr/bin/azcopy
     which azcopy
   continueOnError: false
