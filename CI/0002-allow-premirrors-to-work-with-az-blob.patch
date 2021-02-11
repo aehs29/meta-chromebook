@@ -1,0 +1,75 @@
+From b1e17fd1c323a76a6666bdf0624e62981df442b5 Mon Sep 17 00:00:00 2001
+From: Alejandro Hernandez Samaniego <alejandro@enedino.org>
+Date: Wed, 10 Feb 2021 17:25:45 -0700
+Subject: [PATCH 2/2] allow premirrors to work with az-blob
+
+Signed-off-by: Alejandro Enedino Hernandez Samaniego <alejandro@enedino.org>
+---
+ bitbake/lib/bb/fetch2/__init__.py | 5 ++++-
+ bitbake/lib/bb/fetch2/wget.py     | 8 +++++++-
+ meta/classes/uninative.bbclass    | 7 +++++--
+ 3 files changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/bitbake/lib/bb/fetch2/__init__.py b/bitbake/lib/bb/fetch2/__init__.py
+index 7f270b3a25..59bacaf395 100644
+--- a/bitbake/lib/bb/fetch2/__init__.py
++++ b/bitbake/lib/bb/fetch2/__init__.py
+@@ -393,7 +393,10 @@ def decodeurl(url):
+                 s2 = '='.join(s[1:])
+                 p[s1] = s2
+ 
+-    return type, host, urllib.parse.unquote(path), user, pswd, p
++    if 'sv=' not in path:
++        path = urllib.parse.unquote(path)
++
++    return type, host, path, user, pswd, p
+ 
+ def encodeurl(decoded):
+     """Encodes a URL from tokens (scheme, network location, path,
+diff --git a/bitbake/lib/bb/fetch2/wget.py b/bitbake/lib/bb/fetch2/wget.py
+index eeb17bda3f..cced1652b2 100644
+--- a/bitbake/lib/bb/fetch2/wget.py
++++ b/bitbake/lib/bb/fetch2/wget.py
+@@ -78,7 +78,8 @@ class Wget(FetchMethod):
+         else:
+             ud.basename = os.path.basename(ud.path)
+ 
+-        ud.localfile = d.expand(urllib.parse.unquote(ud.basename))
++        ####### # ud.localfile = d.expand(urllib.parse.unquote(ud.basename))
++        ud.localfile = d.expand(urllib.parse.unquote(ud.basename.split('?')[0]))
+         if not ud.localfile:
+             ud.localfile = d.expand(urllib.parse.unquote(ud.host + ud.path).replace("/", "."))
+ 
+@@ -102,6 +103,11 @@ class Wget(FetchMethod):
+             bb.utils.mkdirhier(os.path.dirname(localpath))
+             fetchcmd += " -O %s" % shlex.quote(localpath)
+ 
++        ##### ACtual code
++        if '?' in ud.url:
++            localpath = os.path.join(d.getVar("DL_DIR"), ud.localfile).split('?')[0]
++            fetchcmd += " -O %s" % shlex.quote(localpath)
++            ud.localpath = localpath
+         if ud.user and ud.pswd:
+             fetchcmd += " --user=%s --password=%s --auth-no-challenge" % (ud.user, ud.pswd)
+ 
+diff --git a/meta/classes/uninative.bbclass b/meta/classes/uninative.bbclass
+index 1e19917a97..037d606c70 100644
+--- a/meta/classes/uninative.bbclass
++++ b/meta/classes/uninative.bbclass
+@@ -62,8 +62,11 @@ python uninative_event_fetchloader() {
+                     (find, replace) = line
+                 except ValueError:
+                     continue
+-                if find.startswith("http"):
+-                    localdata.appendVar("PREMIRRORS", " ${UNINATIVE_URL}${UNINATIVE_TARBALL} %s/uninative/%s/${UNINATIVE_TARBALL}" % (replace, chksum))
++                ##### Due to the way uninative manipulates the URL, this is not compatible with the AZBLOB
++                ##### PREMIRRORS (it basically adds the uniative path after the token has already been added to the URL
++                ##### So we simply avoid looking for uninative on premirrors
++                # if find.startswith("http"):
++                #     localdata.appendVar("PREMIRRORS", " ${UNINATIVE_URL}${UNINATIVE_TARBALL} %s/uninative/%s/${UNINATIVE_TARBALL}" % (replace, chksum))
+ 
+             srcuri = d.expand("${UNINATIVE_URL}${UNINATIVE_TARBALL};sha256sum=%s" % chksum)
+             bb.note("Fetching uninative binary shim %s (will check PREMIRRORS first)" % srcuri)
+-- 
+2.25.1
+
