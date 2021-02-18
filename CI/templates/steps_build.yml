@@ -16,9 +16,6 @@ steps:
       ls -l $(Build.SourcesDirectory)/CI/0001*.patch
       git show
       source oe-init-build-env
-      export PATH=$PATH:$(DL_DIR)/azcopy_bin/
-      ls -l $(DL_DIR)/azcopy_bin/
-      which azcopy
       echo "MACHINE = \"${MACHINE}\"" >> ./conf/local.conf
       echo "PREFERRED_PROVIDER_virtual/kernel = \"${KERNEL}\"" >> ./conf/local.conf
       echo "${EXTRA_LOCALCONF}" >> ./conf/local.conf

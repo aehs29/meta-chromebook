@@ -1,9 +1,7 @@
-From dd8c2617d77f473c6dfdb49d330b44a94cc46b86 Mon Sep 17 00:00:00 2001
-From: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
+From 7c554b33679fb8a02fe7561a37e79c54a1d2f4bf Mon Sep 17 00:00:00 2001
+From: Alejandro Hernandez Samaniego <alejandro@enedino.org>
 Date: Thu, 11 Feb 2021 01:21:21 -0700
 Subject: [PATCH] bitbake: Add Azure Storage fetcher implementation
-
-Fetch sources using azcopy (assumed to be installed on the host).
 
 This fetcher can easily be used with PREMIRRORS and SSTATE_MIRRORS:
 
@@ -21,12 +19,12 @@ declaring the AZ_SAS variable which will be automatically used by the fetcher:
 
 AZ_SAS="?sv=2000-01-01&ss=...&sig=somesignature"
 
-Signed-off-by: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
+Signed-off-by: Alejandro Enedino Hernandez Samaniego <alejandro@enedino.org>
 ---
  bitbake/lib/bb/fetch2/__init__.py |  4 +-
- bitbake/lib/bb/fetch2/az.py       | 88 +++++++++++++++++++++++++++++++
+ bitbake/lib/bb/fetch2/az.py       | 94 +++++++++++++++++++++++++++++++
  meta/classes/sanity.bbclass       |  2 +-
- 3 files changed, 92 insertions(+), 2 deletions(-)
+ 3 files changed, 98 insertions(+), 2 deletions(-)
  create mode 100644 bitbake/lib/bb/fetch2/az.py
 
 diff --git a/bitbake/lib/bb/fetch2/__init__.py b/bitbake/lib/bb/fetch2/__init__.py
@@ -57,10 +55,10 @@ index 19169d780f..cf0201c490 100644
 +methods.append(az.Az())
 diff --git a/bitbake/lib/bb/fetch2/az.py b/bitbake/lib/bb/fetch2/az.py
 new file mode 100644
-index 0000000000..c7f825b790
+index 0000000000..4983713b00
 --- /dev/null
 +++ b/bitbake/lib/bb/fetch2/az.py
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,94 @@
 +"""
 +BitBake 'Fetch' Azure Storage implementation
 +
@@ -71,82 +69,88 @@ index 0000000000..c7f825b790
 +# Based on bb.fetch2.wget:
 +# Copyright (C) 2003, 2004  Chris Larson
 +#
-+# Based on s3 fetch:
-+# Copyright (C) 2017, Andre McCurdy <armccurdy@gmail.com>
-+#
 +# SPDX-License-Identifier: GPL-2.0-only
 +#
 +# Based on functions from the base bb module, Copyright 2003 Holger Schurig
 +
++import shlex
 +import os
 +import bb
-+import urllib.request, urllib.parse, urllib.error
-+from   bb.fetch2 import FetchMethod
 +from   bb.fetch2 import FetchError
-+from   bb.fetch2 import runfetchcmd
++from   bb.fetch2 import logger
++from   bb.fetch2.wget import Wget
 +
 +
-+class Az(FetchMethod):
++class Az(Wget):
 +
 +    def supports(self, ud, d):
 +        """
-+        Check to see if a given url can be fetched with Azure
++        Check to see if a given url can be fetched from Azure Storage
 +        """
 +        return ud.type in ['az']
 +
-+    def recommends_checksum(self, urldata):
-+        return True
 +
-+    def urldata_init(self, ud, d):
-+        if 'downloadfilename' in ud.parm:
-+            ud.basename = ud.parm['downloadfilename']
-+        else:
-+            ud.basename = os.path.basename(ud.path)
-+        ud.localfile = d.expand(urllib.parse.unquote(ud.basename))
-+        ud.basecmd = d.getVar("FETCHCMD_az") or "/usr/bin/env azcopy"
++    def checkstatus(self, fetch, ud, d, try_again=True):
 +
-+    def download(self, ud, d):
-+        """
-+        Fetch urls
-+        """
++        # checkstatus discards parameters either way, we need to do this before adding the SAS
++        ud.url = ud.url.replace('az://','https://').split(';')[0]
 +
-+        # Check if a Shared Access Signature was give and use it
++        az_sas = d.getVar('AZ_SAS')
++        if az_sas and az_sas not in ud.url:
++            ud.url += az_sas
++
++        return Wget.checkstatus(self,fetch,ud,d,try_again)
++
++    # Override download method, include retries
++    def download(self, ud, d, retries=3):
++        """Fetch urls"""
++
++        fetchcmd = self.basecmd
++
++        # We need to provide a localpath to avoid wget using the SAS
++        # ud.localfile either has the downloadfilename or ud.path
++        localpath = os.path.join(d.getVar("DL_DIR"), ud.localfile)
++        bb.utils.mkdirhier(os.path.dirname(localpath))
++        fetchcmd += " -O %s" % shlex.quote(localpath)
++
++
++        if ud.user and ud.pswd:
++            fetchcmd += " --user=%s --password=%s --auth-no-challenge" % (ud.user, ud.pswd)
++
++        uri = ud.url.split(";")[0]
++
++        # Check if a Shared Access Signature was given and use it
 +        az_sas = d.getVar('AZ_SAS')
 +
-+        # Use https
 +        if az_sas:
-+            fetchcmd = '%s cp "https://%s%s%s" %s' % (ud.basecmd, ud.host, ud.path, az_sas, ud.localpath)
++            newuri = '%s%s%s%s' % ('https://', ud.host, ud.path, az_sas)
 +        else:
-+            fetchcmd = '%s cp "https://%s%s" %s' % (ud.basecmd, ud.host, ud.path, ud.localpath)
-+        bb.fetch2.check_network_access(d, fetchcmd, ud.url)
-+        runfetchcmd(fetchcmd, d)
++            newuri = '%s%s%s' % ('https://', ud.host, ud.path)
 +
++        if os.path.exists(ud.localpath):
++            # file exists, but we didnt complete it.. trying again.
++            fetchcmd += d.expand(" -c -P ${DL_DIR} '%s'" % newuri)
++        else:
++            fetchcmd += d.expand(" -P ${DL_DIR} '%s'" % newuri)
++
++        try:
++            self._runwget(ud, d, fetchcmd, False)
++        except FetchError as e:
++            bb.warn(str(e))
++            # Azure fails on handshake sometimes, producing a FetchError
++            # from the fetcher retry if thats the case
++            if 'Unable to establish SSL connection' in str(e):
++                bb.warn('Unable to establish SSL connection: Try# %s, Retrying...' % retries)
++                self.download(ud, d, retries-1)
++
++        # Sanity check since wget can pretend it succeed when it didn't
++        # Also, this used to happen if sourceforge sent us to the mirror page
 +        if not os.path.exists(ud.localpath):
 +            raise FetchError("The fetch command returned success for url %s but %s doesn't exist?!" % (uri, ud.localpath), uri)
++
 +        if os.path.getsize(ud.localpath) == 0:
 +            os.remove(ud.localpath)
 +            raise FetchError("The fetch of %s resulted in a zero size file?! Deleting and failing since this isn't right." % (uri), uri)
-+
-+        return True
-+
-+    def checkstatus(self, fetch, ud, d):
-+        """
-+        Check the status of a URL
-+        """
-+
-+        az_sas = d.getVar('AZ_SAS')
-+        
-+        if az_sas:
-+            fetchcmd = '%s list https://%s%s%s' % (ud.basecmd, ud.host, ud.path, az_sas)
-+        else:
-+            fetchcmd = '%s list https://%s%s' % (ud.basecmd, ud.host, ud.path)
-+        bb.fetch2.check_network_access(d, fetchcmd, ud.url)
-+        output = runfetchcmd(fetchcmd, d)
-+
-+        # azcopy list returns 0 (but no output) when an object wasn't found,
-+        # if the authentication method isn't valid it returns 1
-+        if not output:
-+            raise FetchError("The azcopy list command for https://%s%s gave empty output" % (ud.host, ud.path))
 +
 +        return True
 diff --git a/meta/classes/sanity.bbclass b/meta/classes/sanity.bbclass
