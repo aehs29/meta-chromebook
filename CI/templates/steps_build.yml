@@ -38,6 +38,6 @@ steps:
 - bash: |
     export AZCOPY_VERSION="10"
     wget -O azcopy_v$AZCOPY_VERSION.tar.gz https://aka.ms/downloadazcopy-v$AZCOPY_VERSION-linux && tar -xf azcopy_v$AZCOPY_VERSION.tar.gz  --strip-components=1
-    ./azcopy sync $(SSTATE_DIR) --recursive "https://ypsstate.blob.core.windows.net/sstate-cache$(SAS_TOKEN)"
-    ./azcopy sync $(DL_DIR) --recursive "https://ypsstate.blob.core.windows.net/downloads$(SAS_TOKEN)"
+    ./azcopy sync $(SSTATE_DIR) --recursive "https://yoctoprojectcache.blob.core.windows.net/sstate-cache$(SAS_TOKEN)"
+    ./azcopy sync $(DL_DIR) --recursive "https://yoctoprojectcache.blob.core.windows.net/downloads$(SAS_TOKEN)"
   condition: succeededOrFailed()
