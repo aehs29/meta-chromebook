@@ -173,7 +173,7 @@ steps:
     echo "DL_DIR = \"${DL_DIR}\"" >> ./conf/local.conf
     echo "DISTRO = \"${DISTRO}\"" >> ./conf/local.conf
     echo "INHERIT += \"rm_work\"" >> ./conf/local.conf
-    echo "FETCHCMD_wget = \"/usr/bin/env wget --retry-connrefused --waitretry=10 -t 5 -T 30 --passive-ftp --no-check-certificate\"" >> ./conf/local.conf
+    # echo "FETCHCMD_wget = \"/usr/bin/env wget --retry-connrefused --waitretry=10 -t 5 -T 30 --passive-ftp --no-check-certificate\"" >> ./conf/local.conf
     echo "AZ_SAS = \"$(SAS_TOKEN)\"" >> ./conf/local.conf
     echo "SSTATE_MIRRORS=\" file://.* az://ypsstate.blob.core.windows.net/sstate-cache/PATH;downloadfilename=PATH \n\"" >> ./conf/local.conf
     # echo "PREMIRRORS_prepend=\" git://.*/.* az://ypsstate.blob.core.windows.net/downloads/ \n ftp://.*/.* az://ypsstate.blob.core.windows.net/downloads/ \n http://.*/.* az://ypsstate.blob.core.windows.net/downloads/ \n https://.*/.* az://ypsstate.blob.core.windows.net/downloads/ \n \"" >> ./conf/local.conf
@@ -182,7 +182,7 @@ steps:
     bitbake-layers add-layer ../meta-openembedded/meta-python
     bitbake-layers add-layer ../meta-openembedded/meta-networking
     bitbake-layers add-layer $(Build.SourcesDirectory)
-    git am $(Build.SourcesDirectory)/CI/0001*.patch
+    git am $(Build.SourcesDirectory)/CI/000*.patch
 
     if [ "${DEBUG_PIPE}" == "1" ]; then
       echo "bblayers.conf:"

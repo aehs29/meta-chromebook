@@ -1,30 +1,37 @@
-From 7c554b33679fb8a02fe7561a37e79c54a1d2f4bf Mon Sep 17 00:00:00 2001
-From: Alejandro Hernandez Samaniego <alejandro@enedino.org>
-Date: Thu, 11 Feb 2021 01:21:21 -0700
-Subject: [PATCH] bitbake: Add Azure Storage fetcher implementation
+From a9c61f0cca89dd5e6d474358d6985bbc9e29f829 Mon Sep 17 00:00:00 2001
+From: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
+Date: Tue, 23 Feb 2021 16:02:54 -0700
+Subject: [PATCH 2/4] bitbake: Add Azure Storage fetcher implementation
 
-This fetcher can easily be used with PREMIRRORS and SSTATE_MIRRORS:
+        Allows bitbake to fetch from an Azure Storage account.
 
-SSTATE_MIRRORS = " file://.* az://<azure-storage-account>.blob.core.windows.net/sstate-cache/PATH;downloadfilename=PATH \n"
+        The fetcher submodule is compatible with the az:// URI protocol, its
+        functionality is based on bitbakes wget fetcher, superior in performance
+        to using a propietary tool like azcopy which can handle cloud storage
+        account operations with more functionality but less compatibility.
 
-PREMIRRORS_prepend = "\
-    git://.*/.* az://<azure-storage-account>.blob.core.windows.net/downloads/ \n \
-    ftp://.*/.* az://<azure-storage-account>.blob.core.windows.net/downloads/ \n \
-    http://.*/.* az://<azure-storage-account>.blob.core.windows.net/downloads/ \n \
-    https://.*/.* az://<azure-storage-account>.blob.core.windows.net/downloads/ \n \
-"
+        This fetcher can easily be used with PREMIRRORS and SSTATE_MIRRORS, e.g.:
 
-Can also be used for non-anonymous access via a Shared Access Signature by
-declaring the AZ_SAS variable which will be automatically used by the fetcher:
+        SSTATE_MIRRORS = "file://.* az://<azure-storage-account>.blob.core.windows.net/sstate-cache/PATH;downloadfilename=PATH \n"
 
-AZ_SAS="?sv=2000-01-01&ss=...&sig=somesignature"
+        PREMIRRORS_prepend = "\
+            git://.*/.* az://<azure-storage-account>.blob.core.windows.net/downloads/ \n \
+            ftp://.*/.* az://<azure-storage-account>.blob.core.windows.net/downloads/ \n \
+            http://.*/.* az://<azure-storage-account>.blob.core.windows.net/downloads/ \n \
+            https://.*/.* az://<azure-storage-account>.blob.core.windows.net/downloads/ \n \
+        "
 
-Signed-off-by: Alejandro Enedino Hernandez Samaniego <alejandro@enedino.org>
+        Can also be used with non-public access Azure Storage accounts/containers via a
+        Shared Access Signature by declaring the AZ_SAS variable which will be
+        automatically used by the fetcher:
+
+        AZ_SAS="?sv=2000-01-01&ss=...&sig=somesignature"
+
+Signed-off-by: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
 ---
  bitbake/lib/bb/fetch2/__init__.py |  4 +-
- bitbake/lib/bb/fetch2/az.py       | 94 +++++++++++++++++++++++++++++++
- meta/classes/sanity.bbclass       |  2 +-
- 3 files changed, 98 insertions(+), 2 deletions(-)
+ bitbake/lib/bb/fetch2/az.py       | 93 +++++++++++++++++++++++++++++++
+ 2 files changed, 96 insertions(+), 1 deletion(-)
  create mode 100644 bitbake/lib/bb/fetch2/az.py
 
 diff --git a/bitbake/lib/bb/fetch2/__init__.py b/bitbake/lib/bb/fetch2/__init__.py
@@ -55,16 +62,16 @@ index 19169d780f..cf0201c490 100644
 +methods.append(az.Az())
 diff --git a/bitbake/lib/bb/fetch2/az.py b/bitbake/lib/bb/fetch2/az.py
 new file mode 100644
-index 0000000000..4983713b00
+index 0000000000..3e1756f679
 --- /dev/null
 +++ b/bitbake/lib/bb/fetch2/az.py
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,93 @@
 +"""
 +BitBake 'Fetch' Azure Storage implementation
 +
 +"""
 +
-+# Copyright (C) 2020 Alejandro Hernandez Samaniego
++# Copyright (C) 2021 Alejandro Hernandez Samaniego
 +#
 +# Based on bb.fetch2.wget:
 +# Copyright (C) 2003, 2004  Chris Larson
@@ -99,13 +106,15 @@ index 0000000000..4983713b00
 +        if az_sas and az_sas not in ud.url:
 +            ud.url += az_sas
 +
-+        return Wget.checkstatus(self,fetch,ud,d,try_again)
++        return Wget.checkstatus(self, fetch, ud, d, try_again)
 +
 +    # Override download method, include retries
 +    def download(self, ud, d, retries=3):
 +        """Fetch urls"""
 +
-+        fetchcmd = self.basecmd
++        # If were reaching the account transaction limit we might be
++        # refused a connection, retrying allows us to avoid false negatives
++        fetchcmd = self.basecmd + ' --retry-connrefused --waitretry=5'
 +
 +        # We need to provide a localpath to avoid wget using the SAS
 +        # ud.localfile either has the downloadfilename or ud.path
@@ -117,55 +126,39 @@ index 0000000000..4983713b00
 +        if ud.user and ud.pswd:
 +            fetchcmd += " --user=%s --password=%s --auth-no-challenge" % (ud.user, ud.pswd)
 +
-+        uri = ud.url.split(";")[0]
-+
 +        # Check if a Shared Access Signature was given and use it
 +        az_sas = d.getVar('AZ_SAS')
 +
 +        if az_sas:
-+            newuri = '%s%s%s%s' % ('https://', ud.host, ud.path, az_sas)
++            azuri = '%s%s%s%s' % ('https://', ud.host, ud.path, az_sas)
 +        else:
-+            newuri = '%s%s%s' % ('https://', ud.host, ud.path)
++            azuri = '%s%s%s' % ('https://', ud.host, ud.path)
 +
 +        if os.path.exists(ud.localpath):
 +            # file exists, but we didnt complete it.. trying again.
-+            fetchcmd += d.expand(" -c -P ${DL_DIR} '%s'" % newuri)
++            fetchcmd += d.expand(" -c -P ${DL_DIR} '%s'" % azuri)
 +        else:
-+            fetchcmd += d.expand(" -P ${DL_DIR} '%s'" % newuri)
++            fetchcmd += d.expand(" -P ${DL_DIR} '%s'" % azuri)
 +
 +        try:
 +            self._runwget(ud, d, fetchcmd, False)
 +        except FetchError as e:
-+            bb.warn(str(e))
-+            # Azure fails on handshake sometimes, producing a FetchError
-+            # from the fetcher retry if thats the case
++            # Azure fails on handshake sometimes when using wget, producing a
++            # FetchError from the fetcher, retry if thats the case
 +            if 'Unable to establish SSL connection' in str(e):
-+                bb.warn('Unable to establish SSL connection: Try# %s, Retrying...' % retries)
++                logger.debug2('Unable to establish SSL connection: Retries remaining: %s, Retrying...' % retries)
 +                self.download(ud, d, retries-1)
 +
 +        # Sanity check since wget can pretend it succeed when it didn't
 +        # Also, this used to happen if sourceforge sent us to the mirror page
 +        if not os.path.exists(ud.localpath):
-+            raise FetchError("The fetch command returned success for url %s but %s doesn't exist?!" % (uri, ud.localpath), uri)
++            raise FetchError("The fetch command returned success for url %s but %s doesn't exist?!" % (azuri, ud.localpath), azuri)
 +
 +        if os.path.getsize(ud.localpath) == 0:
 +            os.remove(ud.localpath)
-+            raise FetchError("The fetch of %s resulted in a zero size file?! Deleting and failing since this isn't right." % (uri), uri)
++            raise FetchError("The fetch of %s resulted in a zero size file?! Deleting and failing since this isn't right." % (azuri), azuri)
 +
 +        return True
-diff --git a/meta/classes/sanity.bbclass b/meta/classes/sanity.bbclass
-index 485173ab48..894f0e3107 100644
---- a/meta/classes/sanity.bbclass
-+++ b/meta/classes/sanity.bbclass
-@@ -895,7 +895,7 @@ def check_sanity_everybuild(status, d):
-     mirror_vars = ['MIRRORS', 'PREMIRRORS', 'SSTATE_MIRRORS']
-     protocols = ['http', 'ftp', 'file', 'https', \
-                  'git', 'gitsm', 'hg', 'osc', 'p4', 'svn', \
--                 'bzr', 'cvs', 'npm', 'sftp', 'ssh', 's3' ]
-+                 'bzr', 'cvs', 'npm', 'sftp', 'ssh', 's3', 'az' ]
-     for mirror_var in mirror_vars:
-         mirrors = (d.getVar(mirror_var) or '').replace('\\n', ' ').split()
- 
 -- 
 2.25.1
 

@@ -1,27 +1,27 @@
-From 8b5d6d8d80ee9e43de3fa7d0d8a392b44fe9afb5 Mon Sep 17 00:00:00 2001
+From 69da81e5005146bc78c0507a120b422957ba00b4 Mon Sep 17 00:00:00 2001
 From: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
-Date: Fri, 19 Feb 2021 11:30:48 -0700
-Subject: [PATCH] fetch2/wget: Avoid crashing when connection drops mid
+Date: Fri, 19 Feb 2021 11:13:47 -0700
+Subject: [PATCH 4/4] fetch2/wget: Avoid crashing when connection drops mid
  checkstatus
 
-        If an exception is raised when running host python code, the fetcher
-        immediately crashes, this might be temporary depending on the servers
-        reliability.
+    If an exception is raised when running host python code, the fetcher
+    immediately crashes, this might be temporary depending on the servers
+    reliability.
 
-        Catch the exception when the connection was reset and try once again
-        to fetch the data.
+    Catch the exception when the connection was reset and try once again
+    to fetch the data.
 
-        File: /usr/lib/python3.8/socket.py, lineno: 669, function: readinto
-             0665:        if self._timeout_occurred:
-             0666:            raise OSError("cannot read from timed out object")
-             0667:        while True:
-             0668:            try:
-         *** 0669:                return self._sock.recv_into(b)
-             0670:            except timeout:
-             0671:                self._timeout_occurred = True
-             0672:                raise
-             0673:            except error as e:
-        Exception: ConnectionResetError: [Errno 104] Connection reset by peer
+    File: '/usr/lib/python3.8/socket.py', lineno: 669, function: readinto
+         0665:        if self._timeout_occurred:
+         0666:            raise OSError("cannot read from timed out object")
+         0667:        while True:
+         0668:            try:
+     *** 0669:                return self._sock.recv_into(b)
+         0670:            except timeout:
+         0671:                self._timeout_occurred = True
+         0672:                raise
+         0673:            except error as e:
+    Exception: ConnectionResetError: [Errno 104] Connection reset by peer
 
 Signed-off-by: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
 ---

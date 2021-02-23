@@ -1,0 +1,26 @@
+From 217867b958efbd2b200decae79c289761dca6391 Mon Sep 17 00:00:00 2001
+From: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
+Date: Tue, 23 Feb 2021 13:32:28 -0700
+Subject: [PATCH 1/4] sanity.bbclass: Add az fetcher to accepted URI protocols
+
+Signed-off-by: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
+---
+ meta/classes/sanity.bbclass | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meta/classes/sanity.bbclass b/meta/classes/sanity.bbclass
+index 485173ab48..894f0e3107 100644
+--- a/meta/classes/sanity.bbclass
++++ b/meta/classes/sanity.bbclass
+@@ -895,7 +895,7 @@ def check_sanity_everybuild(status, d):
+     mirror_vars = ['MIRRORS', 'PREMIRRORS', 'SSTATE_MIRRORS']
+     protocols = ['http', 'ftp', 'file', 'https', \
+                  'git', 'gitsm', 'hg', 'osc', 'p4', 'svn', \
+-                 'bzr', 'cvs', 'npm', 'sftp', 'ssh', 's3' ]
++                 'bzr', 'cvs', 'npm', 'sftp', 'ssh', 's3', 'az' ]
+     for mirror_var in mirror_vars:
+         mirrors = (d.getVar(mirror_var) or '').replace('\\n', ' ').split()
+ 
+-- 
+2.25.1
+
