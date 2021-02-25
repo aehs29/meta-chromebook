@@ -1,0 +1,61 @@
+From db5836b47e2ffcc5f1f2d5737a2a4d13be4c4383 Mon Sep 17 00:00:00 2001
+From: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
+Date: Thu, 25 Feb 2021 10:18:34 -0700
+Subject: [PATCH] more-debugging
+
+Signed-off-by: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
+---
+ bitbake/lib/bb/fetch2/az.py   |  2 +-
+ bitbake/lib/bb/fetch2/wget.py | 16 ++++++++++------
+ 2 files changed, 11 insertions(+), 7 deletions(-)
+
+diff --git a/bitbake/lib/bb/fetch2/az.py b/bitbake/lib/bb/fetch2/az.py
+index 3e1756f679..44c7c077fc 100644
+--- a/bitbake/lib/bb/fetch2/az.py
++++ b/bitbake/lib/bb/fetch2/az.py
+@@ -78,7 +78,7 @@ class Az(Wget):
+             # Azure fails on handshake sometimes when using wget, producing a
+             # FetchError from the fetcher, retry if thats the case
+             if 'Unable to establish SSL connection' in str(e):
+-                logger.debug2('Unable to establish SSL connection: Retries remaining: %s, Retrying...' % retries)
++                bb.warn('Unable to establish SSL connection: Retries remaining: %s, Retrying...' % retries)
+                 self.download(ud, d, retries-1)
+ 
+         # Sanity check since wget can pretend it succeed when it didn't
+diff --git a/bitbake/lib/bb/fetch2/wget.py b/bitbake/lib/bb/fetch2/wget.py
+index 6d82f3af07..492c709add 100644
+--- a/bitbake/lib/bb/fetch2/wget.py
++++ b/bitbake/lib/bb/fetch2/wget.py
+@@ -326,19 +326,23 @@ class Wget(FetchMethod):
+                 pass
+         except urllib.error.URLError as e:
+             if try_again:
+-                logger.debug2("checkstatus: trying again")
+-                return self.checkstatus(fetch, ud, d, False)
++                if 'exist' not in str(e):
++                    logger.debug2("URLERROR checkstatus: trying again %s" % uri)
++                    return self.checkstatus(fetch, ud, d, False)
++                else:
++                    return False
+             else:
+-                # debug for now to avoid spamming the logs in e.g. remote sstate searches
+-                logger.debug2("checkstatus() urlopen failed: %s" % e)
++                if 'exist' not in str(e):
++                    # debug for now to avoid spamming the logs in e.g. remote sstate searches
++                    logger.debug2("URLERROR checkstatus() urlopen failed: %s:%s" % (e, uri))
+                 return False
+         except ConnectionResetError as e:
+             if try_again:
+-                logger.debug2("checkstatus: trying again")
++                logger.debug2(" CONNRESETcheckstatus: trying again %s " % uri)
+                 return self.checkstatus(fetch, ud, d, False)
+             else:
+                 # debug for now to avoid spamming the logs in e.g. remote sstate searches
+-                logger.debug2("checkstatus() urlopen failed: %s" % e)
++                logger.debug2("CONNRESET checkstatus() urlopen failed: %s: %s" % (e, uri))
+                 return False
+         return True
+ 
+-- 
+2.25.1
+
