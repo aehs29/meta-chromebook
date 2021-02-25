@@ -172,7 +172,7 @@ steps:
     echo "SSTATE_DIR = \"${SSTATE_DIR}\"" >> ./conf/local.conf
     echo "DL_DIR = \"${DL_DIR}\"" >> ./conf/local.conf
     echo "DISTRO = \"${DISTRO}\"" >> ./conf/local.conf
-    echo "INHERIT += \"rm_work\"" >> ./conf/local.conf
+    # echo "INHERIT += \"rm_work\"" >> ./conf/local.conf
     # echo "FETCHCMD_wget = \"/usr/bin/env wget --retry-connrefused --waitretry=10 -t 5 -T 30 --passive-ftp --no-check-certificate\"" >> ./conf/local.conf
     echo "AZ_SAS = \"$(SAS_TOKEN)\"" >> ./conf/local.conf
     echo "SSTATE_MIRRORS=\" file://.* az://sstate.blob.core.windows.net/sstate-cache/PATH;downloadfilename=PATH \n\"" >> ./conf/local.conf
