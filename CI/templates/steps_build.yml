@@ -39,5 +39,5 @@ steps:
     export AZCOPY_VERSION="10"
     wget -O azcopy_v$AZCOPY_VERSION.tar.gz https://aka.ms/downloadazcopy-v$AZCOPY_VERSION-linux && tar -xf azcopy_v$AZCOPY_VERSION.tar.gz  --strip-components=1
     ./azcopy sync $(SSTATE_DIR) --recursive "https://sstate.blob.core.windows.net/sstate-cache$(SASW_TOKEN)"
-    ./azcopy sync $(DL_DIR) --recursive "https://sstate.blob.core.windows.net/downloads$(SASW_TOKEN)"
+    # ./azcopy sync $(DL_DIR) --recursive "https://sstate.blob.core.windows.net/downloads$(SASW_TOKEN)"
   condition: succeededOrFailed()
