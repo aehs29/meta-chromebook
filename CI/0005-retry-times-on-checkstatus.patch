@@ -1,0 +1,44 @@
+From 51f649d5f9a0d8a4132da24182e29a76b3792570 Mon Sep 17 00:00:00 2001
+From: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
+Date: Thu, 25 Feb 2021 16:30:07 -0700
+Subject: [PATCH 2/2] retry times on checkstatus
+
+Signed-off-by: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
+---
+ bitbake/lib/bb/fetch2/az.py | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/bitbake/lib/bb/fetch2/az.py b/bitbake/lib/bb/fetch2/az.py
+index a565dc607e..6e28bf995e 100644
+--- a/bitbake/lib/bb/fetch2/az.py
++++ b/bitbake/lib/bb/fetch2/az.py
+@@ -37,8 +37,16 @@ class Az(Wget):
+         az_sas = d.getVar('AZ_SAS')
+         if az_sas and az_sas not in ud.url:
+             ud.url += az_sas
++        # Checkstatus a maximum of 5 times, we know if may fail 
++        retries = 3
++        while retries > 0:
++            ret = Wget.checkstatus(self, fetch, ud, d, True)
++            if ret:
++                return ret
++            retries -= 1
++            bb.warn("CHECKFAILED Retries remaining %s" % retries)
++        return False
+ 
+-        return Wget.checkstatus(self, fetch, ud, d, try_again)
+ 
+     # Override download method, include retries
+     def download(self, ud, d, retries=3):
+@@ -78,7 +86,7 @@ class Az(Wget):
+             # Azure fails on handshake sometimes when using wget, producing a
+             # FetchError from the fetcher, retry if thats the case
+             if 'Unable to establish SSL connection' in str(e):
+-                bb.warn('Unable to establish SSL connection: Retries remaining: %s, Retrying...' % retries)
++                logger.debug2('Unable to establish SSL connection: Retries remaining: %s, Retrying...' % retries)
+                 self.download(ud, d, retries-1)
+ 
+         # Sanity check since wget can pretend it succeed when it didn't
+-- 
+2.25.1
+

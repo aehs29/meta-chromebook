@@ -1,16 +1,31 @@
-From db5836b47e2ffcc5f1f2d5737a2a4d13be4c4383 Mon Sep 17 00:00:00 2001
+From 8d8f96e5fd62091bd867cdc8866f13a1b5273e58 Mon Sep 17 00:00:00 2001
 From: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
-Date: Thu, 25 Feb 2021 10:18:34 -0700
-Subject: [PATCH] more-debugging
+Date: Thu, 25 Feb 2021 01:03:08 -0700
+Subject: [PATCH 1/2] debug knotty
 
 Signed-off-by: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
 ---
- bitbake/lib/bb/fetch2/az.py   |  2 +-
- bitbake/lib/bb/fetch2/wget.py | 16 ++++++++++------
- 2 files changed, 11 insertions(+), 7 deletions(-)
+ bitbake/lib/bb/fetch2/__init__.py |  2 +-
+ bitbake/lib/bb/fetch2/az.py       |  2 +-
+ bitbake/lib/bb/fetch2/wget.py     | 16 ++++++++++------
+ bitbake/lib/bb/ui/knotty.py       |  6 +++---
+ 4 files changed, 15 insertions(+), 11 deletions(-)
 
+diff --git a/bitbake/lib/bb/fetch2/__init__.py b/bitbake/lib/bb/fetch2/__init__.py
+index cf0201c490..776e5f33d8 100644
+--- a/bitbake/lib/bb/fetch2/__init__.py
++++ b/bitbake/lib/bb/fetch2/__init__.py
+@@ -1732,7 +1732,7 @@ class Fetch(object):
+                             raise
+                         else:
+                             logger.warning('Failed to fetch URL %s, attempting MIRRORS if available' % u)
+-                            logger.debug(str(e))
++                            logger.warn(str(e))
+                         firsterr = e
+                         # Remove any incomplete fetch
+                         if not verified_stamp:
 diff --git a/bitbake/lib/bb/fetch2/az.py b/bitbake/lib/bb/fetch2/az.py
-index 3e1756f679..44c7c077fc 100644
+index a3d6ff5045..a565dc607e 100644
 --- a/bitbake/lib/bb/fetch2/az.py
 +++ b/bitbake/lib/bb/fetch2/az.py
 @@ -78,7 +78,7 @@ class Az(Wget):
@@ -56,6 +71,30 @@ index 6d82f3af07..492c709add 100644
                  return False
          return True
  
+diff --git a/bitbake/lib/bb/ui/knotty.py b/bitbake/lib/bb/ui/knotty.py
+index 0efa614dfc..61db27f9b7 100644
+--- a/bitbake/lib/bb/ui/knotty.py
++++ b/bitbake/lib/bb/ui/knotty.py
+@@ -326,8 +326,8 @@ def print_event_log(event, includelogs, loglines, termfilter):
+     if logfile and os.path.exists(logfile):
+         termfilter.clearFooter()
+         bb.error("Logfile of failure stored in: %s" % logfile)
+-        if includelogs and not event.errprinted:
+-            print("Log data follows:")
++        if True and not False:
++            bb.warn("Log data follows:")
+             f = open(logfile, "r")
+             lines = []
+             while True:
+@@ -344,7 +344,7 @@ def print_event_log(event, includelogs, loglines, termfilter):
+             f.close()
+             if lines:
+                 for line in lines:
+-                    print(line)
++                    bb.warn(line)
+ 
+ def _log_settings_from_server(server, observe_only):
+     # Get values of variables which control our output
 -- 
 2.25.1
 
