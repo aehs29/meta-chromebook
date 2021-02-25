@@ -114,7 +114,7 @@ index 0000000000..3e1756f679
 +
 +        # If were reaching the account transaction limit we might be
 +        # refused a connection, retrying allows us to avoid false negatives
-+        fetchcmd = self.basecmd + ' --retry-connrefused --waitretry=5'
++        fetchcmd = self.basecmd + ' --retry-connrefused --waitretry=5 --tries=10'
 +
 +        # We need to provide a localpath to avoid wget using the SAS
 +        # ud.localfile either has the downloadfilename or ud.path
