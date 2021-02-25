@@ -1,0 +1,37 @@
+From fcddf8246d5de7de1f8de2769ecc6ab31c5c6087 Mon Sep 17 00:00:00 2001
+From: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
+Date: Thu, 25 Feb 2021 01:03:08 -0700
+Subject: [PATCH] debug knotty
+
+Signed-off-by: Alejandro Enedino Hernandez Samaniego <alhe@linux.microsoft.com>
+---
+ bitbake/lib/bb/ui/knotty.py | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/bitbake/lib/bb/ui/knotty.py b/bitbake/lib/bb/ui/knotty.py
+index 0efa614dfc..61db27f9b7 100644
+--- a/bitbake/lib/bb/ui/knotty.py
++++ b/bitbake/lib/bb/ui/knotty.py
+@@ -326,8 +326,8 @@ def print_event_log(event, includelogs, loglines, termfilter):
+     if logfile and os.path.exists(logfile):
+         termfilter.clearFooter()
+         bb.error("Logfile of failure stored in: %s" % logfile)
+-        if includelogs and not event.errprinted:
+-            print("Log data follows:")
++        if True and not False:
++            bb.warn("Log data follows:")
+             f = open(logfile, "r")
+             lines = []
+             while True:
+@@ -344,7 +344,7 @@ def print_event_log(event, includelogs, loglines, termfilter):
+             f.close()
+             if lines:
+                 for line in lines:
+-                    print(line)
++                    bb.warn(line)
+ 
+ def _log_settings_from_server(server, observe_only):
+     # Get values of variables which control our output
+-- 
+2.25.1
+
