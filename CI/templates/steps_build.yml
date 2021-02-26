@@ -11,9 +11,6 @@ steps:
       cd ~/poky
       git config --global user.email "you@example.com"
       git config --global user.name "Your Name"
-      git am $(Build.SourcesDirectory)/CI/*.patch
-      echo "git am $(Build.SourcesDirectory)/CI/000*.patch"
-      ls -l $(Build.SourcesDirectory)/CI/000*.patch
       git show
       source oe-init-build-env
       echo "MACHINE = \"${MACHINE}\"" >> ./conf/local.conf
