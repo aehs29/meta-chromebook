@@ -17,7 +17,7 @@ index a565dc607e..6e28bf995e 100644
          if az_sas and az_sas not in ud.url:
              ud.url += az_sas
 +        # Checkstatus a maximum of 5 times, we know if may fail 
-+        retries = 3
++        retries = 1
 +        while retries > 0:
 +            ret = Wget.checkstatus(self, fetch, ud, d, True)
 +            if ret:
