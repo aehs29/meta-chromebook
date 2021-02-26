@@ -158,7 +158,7 @@ steps:
     echo "Cloning Yocto Project"
     echo "Building Yocto branch: ${BRANCHNAME}"
     # git clone git://git.yoctoproject.org/poky -b ${BRANCHNAME}
-    git clone https://github.com/aehs29/poky.git -b test-azfetcher
+    git clone https://github.com/aehs29/poky.git -b azfetcher-clean
     cd poky
     git clone https://git.yoctoproject.org/git/meta-intel -b ${BRANCHNAME}
     git clone git://git.openembedded.org/meta-openembedded -b ${BRANCHNAME}
