@@ -35,6 +35,13 @@ steps:
 - bash: |
     export AZCOPY_VERSION="10"
     wget -O azcopy_v$AZCOPY_VERSION.tar.gz https://aka.ms/downloadazcopy-v$AZCOPY_VERSION-linux && tar -xf azcopy_v$AZCOPY_VERSION.tar.gz  --strip-components=1
-    ./azcopy sync $(SSTATE_DIR) --recursive "https://ypcache.blob.core.windows.net/sstate-cache$(SASW_TOKEN)"
-    # ./azcopy sync $(DL_DIR) --recursive "https://sstate.blob.core.windows.net/downloads$(SASW_TOKEN)"
+    retries=0
+    until [ "$retries" -ge 3 ]
+    do
+        ./azcopy sync $(SSTATE_DIR) --recursive "https://ypcache.blob.core.windows.net/sstate-cache$(SASW_TOKEN)"
+        retries=$((retries+1))
+        echo "Uploading sstate artifacts failed (try #$retries), retrying ..."
+        sleep 10
+    done
   condition: succeededOrFailed()
+  displayName: 'Sync sstate'

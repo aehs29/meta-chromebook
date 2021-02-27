@@ -133,7 +133,7 @@ steps:
     /home/vsts/agents/2.171.1/ /usr/local/aws-cli/ /usr/local/doc/  /home/linuxbrew/.linuxbrew/ \
     /usr/share/doc/ /usr/share/vim/ "
     # This cant be done in parallel
-    for i in ${TOFREE};do sudo rm -rf $i; done;
+    # for i in ${TOFREE};do sudo rm -rf $i; done;
 
     if [ "${DEBUG_PIPE}" == "1" ]; then
       df -h
