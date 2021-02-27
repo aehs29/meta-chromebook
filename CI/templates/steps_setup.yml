@@ -176,7 +176,7 @@ steps:
     # echo "INHERIT += \"rm_work\"" >> ./conf/local.conf
     # echo "FETCHCMD_wget = \"/usr/bin/env wget --retry-connrefused --waitretry=10 -t 5 -T 30 --passive-ftp --no-check-certificate\"" >> ./conf/local.conf
     echo "AZ_SAS = \"$(SAS_TOKEN)\"" >> ./conf/local.conf
-    echo "SSTATE_MIRRORS=\" file://.* az://ypsstate.blob.core.windows.net/sstate-cache/PATH;downloadfilename=PATH \n\"" >> ./conf/local.conf
+    echo "SSTATE_MIRRORS=\" file://.* az://ypcache.blob.core.windows.net/sstate-cache/PATH;downloadfilename=PATH \n\"" >> ./conf/local.conf
     # echo "PREMIRRORS_prepend=\" git://.*/.* az://sstate.blob.core.windows.net/downloads/ \n ftp://.*/.* az://sstate.blob.core.windows.net/downloads/ \n http://.*/.* az://sstate.blob.core.windows.net/downloads/ \n https://.*/.* az://sstate.blob.core.windows.net/downloads/ \n \"" >> ./conf/local.conf
     bitbake-layers add-layer ../meta-intel
     bitbake-layers add-layer ../meta-openembedded/meta-oe
